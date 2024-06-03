@@ -1,0 +1,56 @@
+function [dy] = anneal(t,currval)
+% currval = [T1, T2, LT1, LT2, dsDNA1, dsDNA2, P1, P2, hdDNA1, hdDNA2, hdDNA3, hdDNA4, Enzyme, kf1, kf2, kf3, kf4, kf5, dG_init, dG_adpt, temp, length_T, length_P];
+dy = zeros(22,1);       
+T1 = currval(1);            %短模板1
+T2 = currval(2);            %短模板2
+LT1 = currval(3);           %长模板1
+LT2 =  currval(4);          %长模板2
+dsDNA1 = currval(5);        %短双链模板
+dsDNA2 =  currval(6);       %长双链模板  
+P1 =  currval(7);           %引物1，FP      
+P2 =  currval(8);           %引物2，RP
+hdDNA1 = currval(9);        %引物1与短模板1形成的hetero duplex
+hdDNA2 = currval(10);       %引物2与短模板2形成的hetero duplex
+hdDNA3 = currval(11);       %引物1与长模板1形成的hetero duplex   
+hdDNA4 = currval(12);       %引物2与长模板2形成的hetero duplex
+kf1 = currval(13);          %模板间的结合速率常数
+kf2 = currval(14);          %引物1与短、长模板的结合速率常数
+kf3 = currval(15);          %引物2与短模板的结合速率常数
+kf4 = currval(16);          %引物2与长模板的结合速率常数
+kf5 = currval(17);          %酶的dNTP掺入速率常数
+dG_init = currval(18);      %引物2初始结合部分的自由能
+dG_adpt = currval(19);      %引物2 adptor部分的自由能
+temp = currval(20);         %温度
+length_T = currval(21);     %模板长度
+length_P = currval(22);     %引物长度
+%Km = Enzyme_ini/2;                              %米氏常数，此处设置为酶浓度的1/2
+
+kr2 = kf2kr(-12, temp, kf2);               %引物1与短、长模板的解离速率常数，此处默认FP的结合自由能为-12
+kr3 = kf2kr(dG_init, temp, kf3);            %引物2与短模板的解离速率常数 
+kr4 = kf2kr(dG_init+dG_adpt, temp, kf3);    %引物2与长模板的解离速率常数 
+kf5_cal = kf5/(length_T-length_P);          %酶延伸一条链的速率常数
+
+dy(1) = -kf1*T1*T2 - kf1*T1*LT2 - kf2*T1*P1 + kr2*hdDNA1;
+dy(2) = -kf1*T1*T2 - kf1*LT1*T2 - kf3*T2*P2 + kr3*hdDNA2;
+dy(3) = -kf1*LT1*T2 - kf1*LT1*LT2 -kf2*LT1*P1 + kr2*hdDNA3;
+dy(4) = -kf1*T1*LT2 - kf1*LT1*LT2 - kf4*LT2*P2 + kr4*hdDNA4;
+dy(5) = kf1*T1*T2 + kf5_cal*(hdDNA1);
+dy(6) = kf1*LT1*T2 + kf1*T1*LT2 + kf1*LT1*LT2 + kf5_cal*(hdDNA2+hdDNA3+hdDNA4);
+dy(7) = -kf2*T1*P1 + kr2*hdDNA1 - kf2*LT1*P1 + kr2*hdDNA3;
+dy(8) = -kf3*T2*P2 + kr3*hdDNA2 - kf4*LT2*P2 + kr4*hdDNA4;
+dy(9) = kf2*T1*P1 - kr2*hdDNA1 - kf5_cal*(hdDNA1);
+dy(10) = kf3*T2*P2 - kr3*hdDNA2 - kf5_cal*(hdDNA2);
+dy(11) = kf2*LT1*P1 - kr2*hdDNA3 - kf5_cal*(hdDNA3);
+dy(12) = kf4*LT2*P2 - kr4*hdDNA4 - kf5_cal*(hdDNA4);
+dy(13) = 0;
+dy(14) = 0;
+dy(15) = 0;
+dy(16) = 0;
+dy(17) = 0;
+dy(18) = 0;
+dy(19) = 0;
+dy(20) = 0;
+dy(21) = 0;
+dy(22) = 0;
+
+end
